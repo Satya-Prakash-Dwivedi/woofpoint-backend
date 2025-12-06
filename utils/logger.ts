@@ -1,4 +1,5 @@
 import winston from "winston";
+import path from "path";
 
 const { combine, timestamp, json } = winston.format;
 
@@ -16,7 +17,7 @@ const logger = winston.createLogger({
 
 // In production env always log to a file.
 if(process.env.NODE_ENV == 'production'){
-    logger.add(new winston.transports.File({filename: 'logs/backend.log'}));
+    logger.add(new winston.transports.File({filename: path.join(__dirname, '..', '..', 'logs', 'backend.log')}));
 }
 
 export default logger;
