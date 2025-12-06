@@ -1,6 +1,5 @@
 import Owner from "../models/owner.model";
 import mongoose from "mongoose";
-import User from "../models/user.model"
 import logger from "../utils/logger";
 
 // Example Implementation for Adding a Dog
@@ -19,6 +18,7 @@ export const addDog = async (req: any, res: any) => {
 
         // Find the newly added dog to return it
         const newDog = owner.dogs[owner.dogs.length - 1];
+        logger.info("Dog profile added successfully 🐶 ")
         res.status(201).json({ message: "Dog added successfully", dog: newDog });
     } catch (err) {
         logger.error('Error adding dog', { userId: req.user.id, error: err });
@@ -50,6 +50,7 @@ export const updateDog = async (req: any, res: any) => {
         Object.assign(dogToUpdate, updatedDogData);
         await owner.save();
 
+        logger.info("Dog profile updated successfully 🐶 ")
         res.json({ message: "Dog updated successfully", dog: dogToUpdate });
     } catch (err) {
         logger.error('Error updating dog', { userId: req.user.id, dogId: req.params.dogId, error: err });
@@ -74,6 +75,7 @@ export const deleteDog = async (req: any, res: any) => {
 
         await owner.save();
 
+        logger.info("Dog profile deleted successfully 🐶 ")
         res.json({ message: "Dog deleted successfully" });
     } catch (err) {
         logger.error('Error deleting dog', { userId: req.user.id, dogId: req.params.dogId, error: err });

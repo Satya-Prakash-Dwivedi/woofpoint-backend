@@ -112,6 +112,8 @@ export const updateOwnerProfile = async (req: any, res: any) => {
       { new: true, upsert: true }
     );
 
+    logger.info(" Owner Profile updated successfully ⬆️ ", {userId : user._id, email : user.email})
+
     // ✅ Ensure response always has safe defaults
     res.json({
       message: "Owner profile updated successfully",

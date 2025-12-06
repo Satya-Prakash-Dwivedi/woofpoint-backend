@@ -130,7 +130,7 @@ export const login = async (req: Request, res: Response) => {
             updatedAt: user.updatedAt
         };
 
-        logger.info('User logged in successfully', {userId : user._id, email : user.email})
+        logger.info('User logged in successfully ➡️ ', {userId : user._id, email : user.email})
 
         res.status(200).json({
             user: userResponse,
@@ -159,7 +159,7 @@ export const logout = async (req: AuthRequest, res: Response) => {
         const userId = req.user?.id;
         const userEmail = req.user ? await User.findById(userId, 'email') : null;
 
-        logger.info('User logged out', { userId: userId, email: userEmail?.email || 'Unknown' });
+        logger.info(' User logged out ⬅️ ', { userId: userId, email: userEmail?.email || 'Unknown' });
 
         res.status(200).json({
             message: "Logged out successfully"

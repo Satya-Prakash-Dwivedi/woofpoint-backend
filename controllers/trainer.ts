@@ -131,6 +131,8 @@ export const updateTrainerProfile = async (req: any, res: any) => {
             { new: true, upsert: true }
         );
 
+        logger.info(" Trainer Profile updated successfully ⬆️ ", {userId : user._id, email : user.email})
+
         // ✅ Ensure response always has safe defaults
         res.json({
             message: "Trainer profile updated successfully",
