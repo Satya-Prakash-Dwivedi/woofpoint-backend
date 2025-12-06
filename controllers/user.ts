@@ -6,6 +6,7 @@ import User from "../models/user.model";
 import s3 from "../utils/s3";
 import DogOwner from "../models/owner.model";
 import DogTrainer from "../models/trainer.model";
+import logger from "../utils/logger"
 
 
 require('dotenv').config();
@@ -21,6 +22,7 @@ export const signup = async (req: Request, res: Response) => {
         // check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
+            logger.warn('Signup attempt for existing user', { email });
             return res.status(400).json({ error: "User already exists" });
         }
 
@@ -39,7 +41,7 @@ export const signup = async (req: Request, res: Response) => {
             zipCode,
         });
 
-        console.log(user)
+        logger.info('New user created', { userId: user._id, email: user.email, role: user.role });
 
         await user.save();
 
@@ -63,7 +65,7 @@ export const signup = async (req: Request, res: Response) => {
 
         return res.status(201).json({ token });
     } catch (err) {
-        console.error("Signup error:", err);
+        logger.error('Signup error', { error: err });
         res.status(500).json({ error: "Server error" });
     }
 };
@@ -86,7 +88,7 @@ export const login = async (req: Request, res: Response) => {
         // Find user by email
         const user = await User.findOne({ email: cleanEmail });
         if (!user) {
-            console.log('User not found with email:', cleanEmail);
+            logger.warn('Login attempt with non-existent email', { email: cleanEmail });
             return res.status(401).json({
                 error: "Invalid email or password"
             });
@@ -100,9 +102,9 @@ export const login = async (req: Request, res: Response) => {
         const isPasswordValid = await bcrypt.compare(cleanPassword, user.password);
 
         if (!isPasswordValid) {
-            console.log('Password validation failed');
-            return res.status(401).json({  // Changed from 403 to 401
-                error: "Invalid email or password"  // Changed to generic message for security
+            logger.warn('Login attempt with invalid password', { email: cleanEmail });
+            return res.status(401).json({  
+                error: "Invalid email or password"
             });
         }
 
@@ -127,7 +129,8 @@ export const login = async (req: Request, res: Response) => {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
         };
-        console.log("This is user login token", token);
+
+        logger.info('User logged in successfully', {userId : user._id, email : user.email})
 
         res.status(200).json({
             user: userResponse,
@@ -138,7 +141,7 @@ export const login = async (req: Request, res: Response) => {
 
 
     } catch (error: any) {
-        console.error('Login error:', error);
+        logger.error('Login error', {error: error});
 
         res.status(500).json({
             error: "Login failed",
@@ -156,14 +159,14 @@ export const logout = async (req: AuthRequest, res: Response) => {
         const userId = req.user?.id;
         const userEmail = req.user ? await User.findById(userId, 'email') : null;
 
-        // console.log(`User logout: ${userEmail?.email || 'Unknown'} at ${new Date().toISOString()}`);
+        logger.info('User logged out', { userId: userId, email: userEmail?.email || 'Unknown' });
 
         res.status(200).json({
             message: "Logged out successfully"
         });
 
     } catch (error: any) {
-        console.error('Logout error:', error);
+        logger.error('Logout error', { userId: req.user?.id, error: error });
         res.status(500).json({
             error: "Logout failed",
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -217,7 +220,7 @@ export const uploadPhoto = async (req: AuthRequest, res: Response) => {
             user,
         });
     } catch (err) {
-        console.error("uploadPhoto error:", err);
+        logger.error('Upload photo error', { userId: req.user?.id, error: err });
         return res.status(500).json({
             error: "Server error",
             details: process.env.NODE_ENV === 'development' ? (err as Error).message : undefined

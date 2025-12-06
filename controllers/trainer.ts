@@ -5,6 +5,7 @@ import Trainer from "../models/trainer.model";
 import s3 from "../utils/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import logger from "../utils/logger";
 
 export const getTrainerProfile = async (req: any, res: any) => {
     try {
@@ -47,7 +48,7 @@ export const getTrainerProfile = async (req: any, res: any) => {
 
         res.json(profile);
     } catch (err) {
-        console.error("Error fetching trainer profile:", err);
+        logger.error("Error fetching trainer profile", { userId: req.user.id, error: err });
         res.status(500).json({ error: "Server error while fetching profile" });
     }
 };
@@ -153,7 +154,7 @@ export const updateTrainerProfile = async (req: any, res: any) => {
             }
         });
     } catch (err) {
-        console.error(err);
+        logger.error('Error updating trainer profile', { userId: req.user.id, error: err });
         res.status(500).json({ error: "Server error" });
     }
 };

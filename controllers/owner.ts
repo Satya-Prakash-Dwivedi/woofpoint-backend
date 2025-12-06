@@ -5,6 +5,7 @@ import s3 from "../utils/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import mongoose from "mongoose";
+import logger from "../utils/logger";
 
 /**
  * GET /owner/profile
@@ -49,7 +50,7 @@ export const getOwnerProfile = async (req: any, res: any) => {
 
     res.json({ profile });
   } catch (err) {
-    console.error(err);
+    logger.error('Error fetching owner profile', { userId: req.user.id, error: err });
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -127,7 +128,7 @@ export const updateOwnerProfile = async (req: any, res: any) => {
       }
     });
   } catch (err) {
-    console.error("Update owner error:", err);
+    logger.error("Update owner error", { userId: req.user.id, error: err });
     res.status(500).json({ error: "Server error" });
   }
 };    
@@ -171,7 +172,7 @@ export const getAllTrainers = async (req: any, res: any) => {
         res.status(200).json(trainers);
 
     } catch (error) {
-        console.error("Error fetching trainers:", error);
+        logger.error("Error fetching trainers", { error: error });
         res.status(500).json({ error: "Server error while fetching trainers" });
     }
 };
@@ -183,37 +184,37 @@ export const getAllTrainers = async (req: any, res: any) => {
 export const getTrainerById = async (req: any, res: any) => {
     try {
         const { trainerId } = req.params;
-        console.log(`[Backend Debug] --- Received request for trainerId: ${trainerId}`);
+        logger.debug('Received request for getTrainerById', { trainerId });
 
         if (!mongoose.Types.ObjectId.isValid(trainerId)) {
-            console.error(`[Backend Debug] --- Invalid Trainer ID format: ${trainerId}`);
+            logger.warn('Invalid Trainer ID format provided', { trainerId });
             return res.status(400).json({ error: "Invalid Trainer ID" });
         }
 
         // 1. Find the user document
-        console.log(`[Backend Debug] --- Searching for User with _id: ${trainerId}`);
+        logger.debug('Searching for User', { trainerId });
         const user = await User.findById(trainerId).select('-password').lean();
         
         if (!user) {
-            console.error(`[Backend Debug] --- User not found with _id: ${trainerId}`);
+            logger.warn('User record not found for trainer', { trainerId });
             return res.status(404).json({ error: "User record not found for this trainer." });
         }
 
         if (user.role !== 'trainer') {
-            console.error(`[Backend Debug] --- User found, but their role is '${user.role}', not 'trainer'.`);
+            logger.warn('User found, but their role is not trainer', { trainerId, role: user.role });
             return res.status(404).json({ error: "This user is not a trainer." });
         }
 
-        console.log(`[Backend Debug] --- User found: ${user.firstName} ${user.lastName}. Now searching for their Trainer Profile.`);
+        logger.debug('User found, searching for Trainer Profile', { trainerId, userId: user._id });
 
         // 2. Find the corresponding trainer profile document
         const trainer = await Trainer.findOne({ userId: user._id }).lean();
         if (!trainer) {
-            console.error(`[Backend Debug] --- CRITICAL: User record exists, but no Trainer profile was found for userId: ${user._id}`);
+            logger.error('CRITICAL: User record exists, but no Trainer profile was found', { userId: user._id });
             return res.status(404).json({ error: "Trainer profile not found. The user may not have completed their profile setup." });
         }
         
-        console.log(`[Backend Debug] --- Successfully found Trainer profile. Combining data...`);
+        logger.debug('Successfully found Trainer profile, combining data', { userId: user._id });
 
         // 3. Combine all information into a single profile object
         const trainerProfile = {
@@ -233,11 +234,11 @@ export const getTrainerById = async (req: any, res: any) => {
             totalReviews: trainer.ratings?.totalReviews,
         };
 
-        console.log(`[Backend Debug] --- Sending combined profile to frontend.`);
+        logger.debug('Sending combined profile to frontend', { userId: user._id });
         res.status(200).json(trainerProfile);
 
     } catch (error) {
-        console.error("[Backend Debug] --- An unexpected error occurred in getTrainerById:", error);
+        logger.error('An unexpected error occurred in getTrainerById', { error });
         res.status(500).json({ error: "Server error while fetching trainer details" });
     }
 };
