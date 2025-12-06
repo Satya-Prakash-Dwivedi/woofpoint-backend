@@ -1,5 +1,5 @@
 {
-  "name": "woofpoint-server",
+  "name": "woofpoint-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
