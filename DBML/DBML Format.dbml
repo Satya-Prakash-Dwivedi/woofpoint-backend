@@ -1,0 +1,238 @@
+
+
+//////////////////////////////////////////////////////
+// USERS & ROLES
+//////////////////////////////////////////////////////
+
+Table users {
+  id uuid [pk]
+  email varchar [not null, unique]
+  password varchar [not null]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  phone varchar
+  status varchar [note: "active | suspended | deleted"]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table roles {
+  id uuid [pk]
+  name varchar [not null, unique, note: "owner | trainer | admin | future"]
+}
+
+Table user_roles {
+  user_id uuid [not null]
+  role_id uuid [not null]
+
+  Indexes {
+    (user_id, role_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////
+// PROFILES
+//////////////////////////////////////////////////////
+
+Table dog_trainers {
+  id uuid [pk]
+  user_id uuid [not null, unique]
+  years_of_experience int
+  bio text
+  is_verified boolean
+  average_rating float
+  total_reviews int
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table dog_owners {
+  id uuid [pk]
+  user_id uuid [not null, unique]
+  created_at timestamp
+  updated_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// LOCATIONS (GEO-READY)
+//////////////////////////////////////////////////////
+
+Table locations {
+  id uuid [pk]
+  user_id uuid [not null]
+  address varchar
+  city varchar
+  state varchar
+  zip_code varchar
+  latitude float
+  longitude float
+}
+
+
+//////////////////////////////////////////////////////
+// TRAINER BUSINESS DATA
+//////////////////////////////////////////////////////
+
+Table trainer_services {
+  id uuid [pk]
+  trainer_id uuid [not null]
+  name varchar
+  description text
+  duration_minutes int
+  price float
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table trainer_certifications {
+  id uuid [pk]
+  trainer_id uuid [not null]
+  name varchar
+  issued_by varchar
+  issued_at date
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table trainer_availability {
+  id uuid [pk]
+  trainer_id uuid [not null]
+  day_of_week int
+  start_time time
+  end_time time
+  created_at timestamp
+  updated_at timestamp
+}
+
+
+//////////////////////////////////////////////////////
+// DOGS
+//////////////////////////////////////////////////////
+
+Table dogs {
+  id uuid [pk]
+  owner_id uuid [not null]
+  name varchar
+  breed varchar
+  age int
+  size varchar
+  notes text
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table dog_photos {
+  id uuid [pk]
+  dog_id uuid [not null]
+  photo_url varchar
+  created_at timestamp
+}
+
+
+//////////////////////////////////////////////////////
+// BOOKINGS (SYSTEM CORE)
+//////////////////////////////////////////////////////
+
+Table bookings {
+  id uuid [pk]
+  trainer_id uuid [not null]
+  owner_id uuid [not null]
+  dog_id uuid [not null]
+  service_id uuid
+  start_time timestamp
+  end_time timestamp
+  price_snapshot float
+  status varchar [note: "pending | accepted | cancelled | completed"]
+  cancellation_reason text
+  created_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// REVIEWS
+//////////////////////////////////////////////////////
+
+Table reviews {
+  id uuid [pk]
+  booking_id uuid [not null, unique]
+  trainer_id uuid [not null]
+  owner_id uuid [not null]
+  rating int [note: "1–5"]
+  comment text
+  created_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// PAYMENTS & PAYOUTS (STRIPE-READY)
+//////////////////////////////////////////////////////
+
+Table payments {
+  id uuid [pk]
+  booking_id uuid [not null]
+  amount float
+  currency varchar
+  provider varchar [note: "stripe"]
+  status varchar [note: "pending | paid | failed | refunded"]
+  created_at timestamp
+}
+
+Table payouts {
+  id uuid [pk]
+  trainer_id uuid [not null]
+  amount float
+  status varchar [note: "pending | processed"]
+  processed_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// NOTIFICATIONS & AUDIT
+//////////////////////////////////////////////////////
+
+Table notifications {
+  id uuid [pk]
+  user_id uuid [not null]
+  type varchar
+  message text
+  is_read boolean
+  created_at timestamp
+}
+
+Table audit_logs {
+  id uuid [pk]
+  actor_user_id uuid
+  action varchar
+  entity varchar
+  entity_id uuid
+  created_at timestamp
+}
+
+Ref: user_roles.user_id > users.id
+Ref: user_roles.role_id > roles.id
+
+Ref: dog_trainers.user_id > users.id
+Ref: dog_owners.user_id > users.id
+
+Ref: locations.user_id > users.id
+
+Ref: trainer_services.trainer_id > dog_trainers.id
+Ref: trainer_certifications.trainer_id > dog_trainers.id
+Ref: trainer_availability.trainer_id > dog_trainers.id
+
+Ref: dogs.owner_id > dog_owners.id
+Ref: dog_photos.dog_id > dogs.id
+
+Ref: bookings.trainer_id > dog_trainers.id
+Ref: bookings.owner_id > dog_owners.id
+Ref: bookings.dog_id > dogs.id
+Ref: bookings.service_id > trainer_services.id
+
+Ref: reviews.booking_id > bookings.id
+Ref: reviews.trainer_id > dog_trainers.id
+Ref: reviews.owner_id > dog_owners.id
+
+Ref: payments.booking_id > bookings.id
+Ref: payouts.trainer_id > dog_trainers.id
+
+Ref: notifications.user_id > users.id
+Ref: audit_logs.actor_user_id > users.id
+
